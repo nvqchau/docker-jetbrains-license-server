@@ -1,50 +1,22 @@
-FROM --platform=${TARGETPLATFORM:-linux/amd64} adoptopenjdk:13-jre-hotspot as suexec
+ARG JLS_VERSION=30803
+ARG JLS_SHA256=a9a2b6163354382162e4e9802ca88a651ca2421a2f495a558babafe5f02f063a
 
-ARG BUILD_DATE
-ARG VCS_REF
-ARG VERSION
-
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
-RUN printf "I am running on ${BUILDPLATFORM:-linux/amd64}, building for ${TARGETPLATFORM:-linux/amd64}\n$(uname -a)\n"
-
-RUN  apt-get update \
-  && apt-get install -y --no-install-recommends \
-    gcc \
-    libc-dev \
-  && curl -o /usr/local/bin/su-exec.c https://raw.githubusercontent.com/ncopa/su-exec/master/su-exec.c \
-  && gcc -Wall /usr/local/bin/su-exec.c -o/usr/local/bin/su-exec \
-  && chown root:root /usr/local/bin/su-exec \
-  && chmod 0755 /usr/local/bin/su-exec
-
-FROM --platform=${TARGETPLATFORM:-linux/amd64} adoptopenjdk:13-jre-hotspot
-
-ARG BUILD_DATE
-ARG VCS_REF
-ARG VERSION
-
-LABEL maintainer="CrazyMax" \
-  org.opencontainers.image.created=$BUILD_DATE \
-  org.opencontainers.image.url="https://github.com/crazy-max/docker-jetbrains-license-server" \
-  org.opencontainers.image.source="https://github.com/crazy-max/docker-jetbrains-license-server" \
-  org.opencontainers.image.version=$VERSION \
-  org.opencontainers.image.revision=$VCS_REF \
-  org.opencontainers.image.vendor="CrazyMax" \
-  org.opencontainers.image.title="JetBrains License Server" \
-  org.opencontainers.image.description="JetBrains License Server" \
-  org.opencontainers.image.licenses="MIT"
+FROM crazymax/yasu:latest AS yasu
+FROM alpine:3.15
 
 ENV JLS_PATH="/opt/jetbrains-license-server" \
-  JLS_VERSION="23527" \
-  JLS_SHA256="6db987ba28d5844e0b0a9bea8b2b9fc75fefe6f0a6f829a2e03343338562ef38" \
   TZ="UTC" \
   PUID="1000" \
   PGID="1000"
 
-RUN apt-get update \
-  && apt-get install -y \
+ARG JLS_SHA256
+RUN apk add --update --no-cache \
     bash \
+    ca-certificates \
     curl \
+    openjdk11-jre \
+    openssl \
+    shadow \
     zip \
     tzdata \
   && mkdir -p /data "$JLS_PATH" \
@@ -54,15 +26,13 @@ RUN apt-get update \
   && rm -f "/tmp/jls.zip" \
   && chmod a+x "$JLS_PATH/bin/license-server.sh" \
   && ln -sf "$JLS_PATH/bin/license-server.sh" "/usr/local/bin/license-server" \
-  && groupadd -f -g ${PGID} jls \
-  && useradd -o -s /bin/bash -d /data -u ${PUID} -g jls -m jls \
+  && addgroup -g ${PGID} jls \
+  && adduser -u ${PUID} -G jls -h /data -s /bin/bash -D jls \
   && chown -R jls. /data "$JLS_PATH" \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+  && rm -rf /tmp/*
 
-COPY --from=suexec /usr/local/bin/su-exec /usr/local/bin/su-exec
+COPY --from=yasu / /
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod a+x /entrypoint.sh
 
 EXPOSE 8000
 WORKDIR /data

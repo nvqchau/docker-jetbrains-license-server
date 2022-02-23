@@ -5,14 +5,13 @@
   <a href="https://github.com/crazy-max/docker-jetbrains-license-server/actions?workflow=build"><img src="https://img.shields.io/github/workflow/status/crazy-max/docker-jetbrains-license-server/build?label=build&logo=github&style=flat-square" alt="Build Status"></a>
   <a href="https://hub.docker.com/r/crazymax/jetbrains-license-server/"><img src="https://img.shields.io/docker/stars/crazymax/jetbrains-license-server.svg?style=flat-square&logo=docker" alt="Docker Stars"></a>
   <a href="https://hub.docker.com/r/crazymax/jetbrains-license-server/"><img src="https://img.shields.io/docker/pulls/crazymax/jetbrains-license-server.svg?style=flat-square&logo=docker" alt="Docker Pulls"></a>
-  <a href="https://www.codacy.com/app/crazy-max/docker-jetbrains-license-server"><img src="https://img.shields.io/codacy/grade/eb420bc3e6ed49ff97cc261602228efa.svg?style=flat-square" alt="Code Quality"></a>
   <br /><a href="https://github.com/sponsors/crazy-max"><img src="https://img.shields.io/badge/sponsor-crazy--max-181717.svg?logo=github&style=flat-square" alt="Become a sponsor"></a>
   <a href="https://www.paypal.me/crazyws"><img src="https://img.shields.io/badge/donate-paypal-00457c.svg?logo=paypal&style=flat-square" alt="Donate Paypal"></a>
 </p>
 
 ## About
 
-🐳 [JetBrains License Server](https://www.jetbrains.com/help/license_server/getting_started.html) Docker image based on AdoptOpenJDK.<br />
+[JetBrains License Server](https://www.jetbrains.com/help/license_server/getting_started.html) Docker image based on Alpine Linux.<br />
 If you are interested, [check out](https://hub.docker.com/r/crazymax/) my other Docker images!
 
 💡 Want to be notified of new releases? Check out 🔔 [Diun (Docker Image Update Notifier)](https://github.com/crazy-max/diun) project!
@@ -20,18 +19,18 @@ If you are interested, [check out](https://hub.docker.com/r/crazymax/) my other 
 ___
 
 * [Features](#features)
-* [Docker](#docker)
-  * [Multi-platform image](#multi-platform-image)
-  * [Environment variables](#environment-variables)
-  * [Volumes](#volumes)
-  * [Ports](#ports)
+* [Build locally](#build-locally)
+* [Image](#image)
+* [Environment variables](#environment-variables)
+* [Volumes](#volumes)
+* [Ports](#ports)
 * [Usage](#usage)
   * [Docker Compose](#docker-compose)
   * [Command line](#command-line)
 * [Upgrade](#upgrade)
 * [Notes](#notes)
   * [Error 403 Passed value of header "Host" is not allowed](#error-403-passed-value-of-header-host-is-not-allowed)
-* [How can I help?](#how-can-i-help)
+* [Contributing](#contributing)
 * [License](#license)
 
 ## Features
@@ -43,24 +42,27 @@ ___
 * [msmtpd SMTP relay](https://github.com/crazy-max/docker-msmtpd) image to send emails
 * [Traefik](https://github.com/containous/traefik-library-image) as reverse proxy and creation/renewal of Let's Encrypt certificates (see [this template](examples/traefik))
 
-## Docker
+## Build locally
 
-### Multi-platform image
+```shell
+git clone https://github.com/crazy-max/docker-jetbrains-license-server.git
+cd docker-jetbrains-license-server
 
-Following platforms for this image are available:
+# Build image and output to docker (default)
+docker buildx bake
 
-```
-$ docker run --rm mplatform/mquery crazymax/jetbrains-license-server:latest
-Image: crazymax/jetbrains-license-server:latest
- * Manifest List: Yes
- * Supported platforms:
-   - linux/amd64
-   - linux/arm64
-   - linux/ppc64le
-   - linux/s390x
+# Build multi-platform image
+docker buildx bake image-all
 ```
 
-### Environment variables
+## Image
+
+| Registry                                                                                         | Image                           |
+|--------------------------------------------------------------------------------------------------|---------------------------------|
+| [Docker Hub](https://hub.docker.com/r/crazymax/jetbrains-license-server/)                                            | `crazymax/jetbrains-license-server`                 |
+| [GitHub Container Registry](https://github.com/users/crazy-max/packages/container/package/jetbrains-license-server)  | `ghcr.io/crazy-max/jetbrains-license-server`        |
+
+## Environment variables
 
 * `TZ`: The timezone assigned to the container (default `UTC`)
 * `PUID`: JLS UID (default `1000`)
@@ -81,14 +83,17 @@ Image: crazymax/jetbrains-license-server:latest
 * `JLS_SMTP_PASSWORD`: SMTP password (auth disabled if empty)
 * `JLS_STATS_FROM`: [From address](https://www.jetbrains.com/help/license_server/detailed_server_usage_statistics.html#d461e40) for stats emails
 * `JLS_STATS_TOKEN`: Enables an auth token for the [stats API](https://www.jetbrains.com/help/license_server/detailed_server_usage_statistics.html#d461e312) at `/reportApi` (HTTP POST)
+* `JLS_SERVICE_LOGLEVEL`: Logging of IDE requests and responses (default `warn`)
+* `JLS_REPORTING_LOGLEVEL`: Logging of actions on a server: tickets obtaining and revoking with user and license information (default `warn`) 
+* `JLS_TICKETS_LOGLEVEL`: Logging of actions with tickets. For example, manual ticket revoking (default `warn`)
 
-### Volumes
+## Volumes
 
 * `/data`: Contains [registration data](https://www.jetbrains.com/help/license_server/migrate.html) and configuration
 
 > :warning: Note that the volumes should be owned by the user/group with the specified `PUID` and `PGID`. If you don't give the volume correct permissions, the container may not start.
 
-### Ports
+## Ports
 
 * `8000`: Jetbrains License Server HTTP port
 
@@ -138,9 +143,11 @@ Passed value of header "Host" is not allowed. Please contact your license server
 
 That's because the license server is running behind a reverse proxy. Please configure virtual hosts using the `JLS_VIRTUAL_HOSTS` variable.
 
-## How can I help?
+## Contributing
 
-All kinds of contributions are welcome :raised_hands:! The most basic way to show your support is to star :star2: the project, or to raise issues :speech_balloon: You can also support this project by [**becoming a sponsor on GitHub**](https://github.com/sponsors/crazy-max) :clap: or by making a [Paypal donation](https://www.paypal.me/crazyws) to ensure this journey continues indefinitely! :rocket:
+Want to contribute? Awesome! The most basic way to show your support is to star the project, or to raise issues. You
+can also support this project by [**becoming a sponsor on GitHub**](https://github.com/sponsors/crazy-max) or by making
+a [Paypal donation](https://www.paypal.me/crazyws) to ensure this journey continues indefinitely!
 
 Thanks again for your support, it is much appreciated! :pray:
 
